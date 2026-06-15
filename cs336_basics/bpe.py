@@ -34,16 +34,6 @@ def get_pair_counts(pretoken_seq, pretoken_counts) -> dict[tuple[int, int], int]
 def get_best_pair(pair_counts, vocab) -> tuple[tuple[int, int], int]:
     return max(pair_counts.items(), key=lambda item: (item[1], vocab[item[0][0]], vocab[item[0][1]]))
 
-# merge pair，为更新pretoken_seq做准备
-def merge_one_pair(seq, best_pair, new_id) -> list[int]:
-    i = 0
-    while i < len(seq):
-        if i < len(seq) - 1 and seq[i] == best_pair[0] and seq[i+1] == best_pair[1]:
-            seq[i] = new_id
-            del seq[i+1]
-        i += 1
-    return seq
-
 # 更新 pretoken_seq
 def update_pretoken_seq(pretoken_seq, pretoken_counts, best_pair, new_id) -> tuple[dict[bytes, list[int]], dict[tuple[int, int], int]]:
     new_pair_counts = {}
@@ -77,20 +67,6 @@ def update_pretoken_seq(pretoken_seq, pretoken_counts, best_pair, new_id) -> tup
                         del seq[j+1]
                     j += 1
                 pretoken_seq[key] = seq
-
-                # for k in range(len(seq)):
-                #     if seq[k] == new_id and len(seq) > 1:
-                #         if k == 0 :
-                #             pair = (seq[k], seq[k+1])
-                #             new_pair_counts[pair] = new_pair_counts.get(pair, 0) + pretoken_counts[key]
-                #         elif k == len(seq) - 1:
-                #             pair = (seq[k-1], seq[k])
-                #             new_pair_counts[pair] = new_pair_counts.get(pair, 0) + pretoken_counts[key]
-                #         else:
-                #             pair_1 = (seq[k-1], seq[k])
-                #             pair_2 = (seq[k], seq[k+1])
-                #             new_pair_counts[pair_1] = new_pair_counts.get(pair_1, 0) + pretoken_counts[key]
-                #             new_pair_counts[pair_2] = new_pair_counts.get(pair_2, 0) + pretoken_counts[key]
                 break
     return pretoken_seq, new_pair_counts
 
@@ -99,6 +75,8 @@ def update_pair_counts(best_pair, pair_counts, new_pair_counts) -> dict[tuple[in
     del pair_counts[best_pair]
     for pair, count in new_pair_counts.items():
         pair_counts[pair] = pair_counts.get(pair, 0) + count
+        if pair_counts[pair] == 0:
+            del pair_counts[pair]
     return pair_counts
 
 def train_bpe(data_dir, special_tokens, vocab_size) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
