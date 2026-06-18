@@ -3,7 +3,7 @@ import regex as re
 PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 
 # 匹配字符串得,按照special_tokens分割,得到match_str
-def get_split_target_str(data_dir, special_tokens) -> list[str]:
+def get_split_target_str(data_dir : str, special_tokens : list[str]) -> list[str]:
     target_str_list = []
     try:
         with open(data_dir, "r", encoding="utf-8") as file:
@@ -21,7 +21,7 @@ def get_split_target_str(data_dir, special_tokens) -> list[str]:
         exit(1)
 
 # 获取pair的次数,只在初始化调用一次
-def get_pair_counts(pretoken_seq, pretoken_counts) -> dict[tuple[int, int], int]:
+def get_pair_counts(pretoken_seq : dict[bytes, list[int]], pretoken_counts : dict[bytes, int]) -> dict[tuple[int, int], int]:
     pair_counts = {}
     for key, val in pretoken_seq.items():
         for i in range(len(val) - 1):
@@ -31,12 +31,12 @@ def get_pair_counts(pretoken_seq, pretoken_counts) -> dict[tuple[int, int], int]
     return pair_counts
 
 # 获取频数最高的pair
-def get_best_pair(pair_counts, vocab) -> tuple[tuple[int, int], int]:
+def get_best_pair(pair_counts : dict[tuple[int, int], int], vocab : dict[int, bytes]) -> tuple[tuple[int, int], int]:
     return max(pair_counts.items(), key=lambda item: (item[1], vocab[item[0][0]], vocab[item[0][1]]))
 
 # 更新 pretoken_seq
-def update_pretoken_seq(pretoken_seq, pretoken_counts, best_pair, new_id) -> tuple[dict[bytes, list[int]], dict[tuple[int, int], int]]:
-    new_pair_counts = {}
+def update_pretoken_seq(pretoken_seq : dict[bytes, list[int]], pretoken_counts : dict[bytes, int], best_pair : tuple[int, int], new_id : int) -> tuple[dict[bytes, list[int]], dict[tuple[int, int], int]]:
+    new_pair_counts : dict[tuple[int, int], int] = {}
     for key, seq in pretoken_seq.items():
         for i in range(len(seq) - 2, -1, -1):
             if seq[i] == best_pair[0] and seq[i+1] == best_pair[1]:
@@ -71,7 +71,7 @@ def update_pretoken_seq(pretoken_seq, pretoken_counts, best_pair, new_id) -> tup
     return pretoken_seq, new_pair_counts
 
 # 更新 pair_counts
-def update_pair_counts(best_pair, pair_counts, new_pair_counts) -> dict[tuple[int, int], int]:
+def update_pair_counts(best_pair : tuple[int, int], pair_counts : dict[tuple[int, int], int], new_pair_counts : dict[tuple[int, int], int]) -> dict[tuple[int, int], int]:
     del pair_counts[best_pair]
     for pair, count in new_pair_counts.items():
         pair_counts[pair] = pair_counts.get(pair, 0) + count
@@ -79,7 +79,7 @@ def update_pair_counts(best_pair, pair_counts, new_pair_counts) -> dict[tuple[in
             del pair_counts[pair]
     return pair_counts
 
-def train_bpe(data_dir, special_tokens, vocab_size) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
+def train_bpe(data_dir : str, special_tokens : list[str], vocab_size : int) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     target_str_list = get_split_target_str(data_dir, special_tokens)
 
     pretoken_counts = {}
